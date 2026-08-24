@@ -29,7 +29,7 @@ func (r *safeguardRepository) Create(ctx context.Context, safeguard *model.Safeg
 func (r *safeguardRepository) GetByID(ctx context.Context, id uint) (model.Safeguard, error) {
 	var safeguard model.Safeguard
 	if err := r.db.WithContext(ctx).Preload("TargetScenario").First(&safeguard, id).Error; err != nil {
-		return model.Safeguard{}, fmt.Errorf("find safeguard %d: %v", id, err)
+		return model.Safeguard{}, fmt.Errorf("find safeguard %d: %w", id, err)
 	}
 	return safeguard, nil
 }
@@ -103,8 +103,11 @@ func (r *safeguardRepository) SetLifecycle(
 	}
 	values["lifecycle_state"] = toState
 	values["updated_at"] = time.Now().UTC()
-	result := r.db.WithContext(ctx).Model(&model.Safeguard{}).
-		Where("id = ?", id).Updates(values)
+	query := r.db.WithContext(ctx).Model(&model.Safeguard{}).Where("id = ?", id)
+	if len(fromStates) > 0 {
+		query = query.Where("lifecycle_state IN ?", fromStates)
+	}
+	result := query.Updates(values)
 	if result.Error != nil {
 		return false, fmt.Errorf("change safeguard lifecycle %d: %w", id, result.Error)
 	}

@@ -83,9 +83,15 @@ func (s *safeguardService) Create(
 func (s *safeguardService) Get(ctx context.Context, id uint) (dto.SafeguardResponse, error) {
 	safeguard, err := s.safeguards.GetByID(ctx, id)
 	if err != nil {
-		return dto.SafeguardResponse{}, util.WrapError(http.StatusInternalServerError, util.CodeInternal, "unable to load safeguard", err)
+		return dto.SafeguardResponse{}, s.loadError(err)
 	}
 	return dto.NewSafeguardResponse(safeguard, s.now()), nil
+}
+func (s *safeguardService) loadError(err error) error {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return util.NotFound("safeguard")
+	}
+	return util.WrapError(http.StatusInternalServerError, util.CodeInternal, "unable to load safeguard", err)
 }
 func (s *safeguardService) List(ctx context.Context, query dto.SafeguardQuery) (dto.SafeguardListResponse, error) {
 	now := s.now()
@@ -111,7 +117,7 @@ func (s *safeguardService) Update(
 	request.Normalize()
 	safeguard, err := s.safeguards.GetByID(ctx, id)
 	if err != nil {
-		return dto.SafeguardResponse{}, util.WrapError(http.StatusInternalServerError, util.CodeInternal, "unable to load safeguard", err)
+		return dto.SafeguardResponse{}, s.loadError(err)
 	}
 	before := safeguard
 	if request.Name != nil {
@@ -161,9 +167,12 @@ func (s *safeguardService) Verify(
 ) (dto.SafeguardResponse, error) {
 	safeguard, err := s.safeguards.GetByID(ctx, id)
 	if err != nil {
-		return dto.SafeguardResponse{}, util.WrapError(http.StatusInternalServerError, util.CodeInternal, "unable to load safeguard", err)
+		return dto.SafeguardResponse{}, s.loadError(err)
 	}
 	now := s.now()
+	if request.VerifiedAt.After(now.Add(5 * time.Minute)) {
+		return dto.SafeguardResponse{}, util.NewError(http.StatusUnprocessableEntity, util.CodeValidation, "verified_at cannot be in the future")
+	}
 	if now.After(request.VerifiedAt.AddDate(0, 0, safeguard.TestIntervalDays)) {
 		return dto.SafeguardResponse{}, util.NewError(http.StatusUnprocessableEntity, util.CodeValidation, "verification is already expired")
 	}
@@ -204,10 +213,7 @@ func (s *safeguardService) Restore(
 ) (dto.SafeguardResponse, error) {
 	safeguard, err := s.safeguards.GetByID(ctx, id)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return dto.SafeguardResponse{}, util.NotFound("safeguard")
-		}
-		return dto.SafeguardResponse{}, util.WrapError(http.StatusInternalServerError, util.CodeInternal, "unable to load safeguard", err)
+		return dto.SafeguardResponse{}, s.loadError(err)
 	}
 	target := "pending"
 	if safeguard.IsEffectiveAt(s.now()) {
@@ -226,7 +232,7 @@ func (s *safeguardService) changeLifecycle(
 ) (dto.SafeguardResponse, error) {
 	before, err := s.safeguards.GetByID(ctx, id)
 	if err != nil {
-		return dto.SafeguardResponse{}, util.WrapError(http.StatusInternalServerError, util.CodeInternal, "unable to load safeguard", err)
+		return dto.SafeguardResponse{}, s.loadError(err)
 	}
 	evidence := fmt.Sprintf("%s\n[%s] %s", before.EvidenceNote, action, reason)
 	changed, err := s.safeguards.SetLifecycle(ctx, id, from, to, map[string]any{"evidence_note": evidence})
