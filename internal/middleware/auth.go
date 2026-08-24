@@ -104,26 +104,35 @@ func NewRateLimiter(limit int) *RateLimiter {
 }
 func (r *RateLimiter) Middleware(scope string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		key := scope + ":" + c.ClientIP()
-		if actor, ok := ActorFromContext(c); ok {
-			key = scope + ":" + actor.Username
+		identity := c.ClientIP()
+		if actor, ok := ActorFromContext(c); ok && actor.Username != "" {
+			identity = actor.Username
 		}
+		key := scope + ":" + identity
 		now := time.Now()
-		window := r.windows[key]
-		if window.start.IsZero() || now.Sub(window.start) >= time.Minute {
-			window = rateWindow{start: now}
-		}
-		window.count++
-		r.windows[key] = window
-		if len(r.windows) > 10000 {
-			for candidate, state := range r.windows {
-				if now.Sub(state.start) > 2*time.Minute {
-					delete(r.windows, candidate)
+		allowed := false
+		retryAfter := 0
+		func() {
+			r.mu.Lock()
+			defer r.mu.Unlock()
+			window, ok := r.windows[key]
+			if !ok || now.Sub(window.start) >= time.Minute {
+				window = rateWindow{start: now}
+			}
+			window.count++
+			r.windows[key] = window
+			allowed = window.count <= r.limit
+			if !allowed {
+				retryAfter = int(time.Minute.Seconds() - now.Sub(window.start).Seconds())
+			}
+			if len(r.windows) > 10000 {
+				for candidate, state := range r.windows {
+					if now.Sub(state.start) > 2*time.Minute {
+						delete(r.windows, candidate)
+					}
 				}
 			}
-		}
-		allowed := window.count <= r.limit
-		retryAfter := int(time.Minute.Seconds() - now.Sub(window.start).Seconds())
+		}()
 		if !allowed {
 			c.Header("Retry-After", strconv.Itoa(retryAfter))
 			util.Fail(c, util.NewError(http.StatusTooManyRequests, util.CodeRateLimited, "request rate limit exceeded"))

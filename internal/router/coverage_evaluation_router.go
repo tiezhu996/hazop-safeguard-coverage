@@ -14,11 +14,11 @@ func RegisterCoverageEvaluationRoutes(
 	runLimiter *middleware.RateLimiter,
 ) {
 	group := api.Group("/coverage-evaluations")
-	group.GET("", middleware.RequirePermission(constants.PermissionRead), runLimiter.Middleware("coverage-run"), h.List)
-	group.GET("/:id", middleware.RequirePermission(constants.PermissionRead), runLimiter.Middleware("coverage-run"), h.Get)
-	group.GET("/:id/compare/:other_id", middleware.RequirePermission(constants.PermissionRead), h.Compare)
+	group.GET("", middleware.RequirePermission(constants.PermissionRead), runLimiter.Middleware("coverage-read"), h.List)
+	group.GET("/:id", middleware.RequirePermission(constants.PermissionRead), runLimiter.Middleware("coverage-read"), h.Get)
+	group.GET("/:id/compare/:other_id", middleware.RequirePermission(constants.PermissionRead), runLimiter.Middleware("coverage-read"), h.Compare)
 	group.POST("", middleware.RequirePermission(constants.PermissionEvaluation), runLimiter.Middleware("coverage-run"), h.Run)
-	group.POST("/:id/confirm", middleware.RequirePermission(constants.PermissionConfirm), h.Confirm)
-	group.POST("/:id/void", middleware.RequirePermission(constants.PermissionConfirm), h.Void)
-	group.POST("/:id/replay", middleware.RequirePermission(constants.PermissionEvaluation), runLimiter.Middleware("coverage-run"), h.Replay)
+	group.POST("/:id/confirm", middleware.RequirePermission(constants.PermissionConfirm), runLimiter.Middleware("coverage-write"), h.Confirm)
+	group.POST("/:id/void", middleware.RequirePermission(constants.PermissionConfirm), runLimiter.Middleware("coverage-write"), h.Void)
+	group.POST("/:id/replay", middleware.RequirePermission(constants.PermissionEvaluation), runLimiter.Middleware("coverage-replay"), h.Replay)
 }
