@@ -68,10 +68,16 @@ func (s *coverageEvaluationService) Run(
 	}
 	scenario, err := s.scenarios.GetByID(ctx, request.ScenarioID, false)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return dto.CoverageEvaluationResponse{}, false, util.NotFound("deviation scenario")
+		}
 		return dto.CoverageEvaluationResponse{}, false, util.WrapError(http.StatusInternalServerError, util.CodeInternal, "unable to load deviation scenario", err)
 	}
 	node, err := s.nodes.GetByID(ctx, scenario.ProcessNodeID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return dto.CoverageEvaluationResponse{}, false, util.NotFound("process node")
+		}
 		return dto.CoverageEvaluationResponse{}, false, util.WrapError(http.StatusInternalServerError, util.CodeInternal, "unable to load process node", err)
 	}
 	safeguards, err := s.safeguards.ListByScenario(ctx, scenario.ID)
@@ -169,6 +175,9 @@ func (s *coverageEvaluationService) Run(
 func (s *coverageEvaluationService) Get(ctx context.Context, id uint) (dto.CoverageEvaluationResponse, error) {
 	evaluation, err := s.evaluations.GetByID(ctx, id)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return dto.CoverageEvaluationResponse{}, util.NotFound("coverage evaluation")
+		}
 		return dto.CoverageEvaluationResponse{}, util.WrapError(http.StatusInternalServerError, util.CodeInternal, "unable to load coverage evaluation", err)
 	}
 	return dto.NewCoverageEvaluationResponse(evaluation), nil
@@ -197,10 +206,16 @@ func (s *coverageEvaluationService) Confirm(
 ) (dto.CoverageEvaluationResponse, error) {
 	evaluation, err := s.evaluations.GetByID(ctx, id)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return dto.CoverageEvaluationResponse{}, util.NotFound("coverage evaluation")
+		}
 		return dto.CoverageEvaluationResponse{}, util.WrapError(http.StatusInternalServerError, util.CodeInternal, "unable to load coverage evaluation", err)
 	}
 	scenario, err := s.scenarios.GetByID(ctx, evaluation.ScenarioID, false)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return dto.CoverageEvaluationResponse{}, util.NotFound("evaluated scenario")
+		}
 		return dto.CoverageEvaluationResponse{}, util.WrapError(http.StatusInternalServerError, util.CodeInternal, "unable to load evaluated scenario", err)
 	}
 	if scenario.CreatedBy == actor.UserID {
@@ -233,6 +248,9 @@ func (s *coverageEvaluationService) Void(
 ) (dto.CoverageEvaluationResponse, error) {
 	evaluation, err := s.evaluations.GetByID(ctx, id)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return dto.CoverageEvaluationResponse{}, util.NotFound("coverage evaluation")
+		}
 		return dto.CoverageEvaluationResponse{}, util.WrapError(http.StatusInternalServerError, util.CodeInternal, "unable to load coverage evaluation", err)
 	}
 	changed, err := s.evaluations.Transition(
@@ -262,6 +280,9 @@ func (s *coverageEvaluationService) Replay(
 ) (dto.CoverageEvaluationResponse, error) {
 	evaluation, err := s.evaluations.GetByID(ctx, id)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return dto.CoverageEvaluationResponse{}, util.NotFound("coverage evaluation")
+		}
 		return dto.CoverageEvaluationResponse{}, util.WrapError(http.StatusInternalServerError, util.CodeInternal, "unable to load coverage evaluation", err)
 	}
 	passed, _, err := s.evaluator.Replay(evaluation.InputSnapshot, evaluation.InputHash, evaluation.CoverageScore)
@@ -293,10 +314,16 @@ func (s *coverageEvaluationService) Compare(
 ) (dto.EvaluationComparisonResponse, error) {
 	base, err := s.evaluations.GetByID(ctx, id)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return dto.EvaluationComparisonResponse{}, util.NotFound("coverage evaluation")
+		}
 		return dto.EvaluationComparisonResponse{}, util.WrapError(http.StatusInternalServerError, util.CodeInternal, "unable to load base evaluation", err)
 	}
 	other, err := s.evaluations.GetByID(ctx, otherID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return dto.EvaluationComparisonResponse{}, util.NotFound("coverage evaluation")
+		}
 		return dto.EvaluationComparisonResponse{}, util.WrapError(http.StatusInternalServerError, util.CodeInternal, "unable to load compared evaluation", err)
 	}
 	if base.ScenarioID != other.ScenarioID {

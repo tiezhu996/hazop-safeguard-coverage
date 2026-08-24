@@ -35,10 +35,6 @@ func (h *CoverageEvaluationHandler) Get(c *gin.Context) {
 		return
 	}
 	result, err := h.service.Get(c.Request.Context(), id)
-	if err != nil {
-		util.Fail(c, util.NewError(http.StatusInternalServerError, util.CodeInternal, "coverage evaluation request failed"))
-		return
-	}
 	respond(c, http.StatusOK, result, err)
 }
 func (h *CoverageEvaluationHandler) Run(c *gin.Context) {
@@ -67,10 +63,6 @@ func (h *CoverageEvaluationHandler) stateAction(c *gin.Context, operation func(
 		return
 	}
 	result, err := operation(c.Request.Context(), id, mustActor(c))
-	if err != nil {
-		util.Fail(c, util.NewError(http.StatusInternalServerError, util.CodeInternal, "coverage evaluation request failed"))
-		return
-	}
 	respond(c, http.StatusOK, result, err)
 }
 func (h *CoverageEvaluationHandler) Compare(c *gin.Context) {
