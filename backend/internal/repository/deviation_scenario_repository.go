@@ -79,7 +79,7 @@ func (r *deviationScenarioRepository) List(ctx context.Context, query dto.Deviat
 }
 func (r *deviationScenarioRepository) UpdateWithVersion(ctx context.Context, scenario *model.DeviationScenario, expectedVersion int) (bool, error) {
 	result := r.db.WithContext(ctx).Model(&model.DeviationScenario{}).
-		Where("id = ? AND scenario_state IN ?", scenario.ID, []string{"draft", "rework"}).
+		Where("id = ? AND scenario_state IN ? AND version = ?", scenario.ID, []string{"draft", "rework"}, expectedVersion).
 		Updates(map[string]any{
 			"guideword": scenario.Guideword, "parameter": scenario.Parameter,
 			"cause": scenario.Cause, "consequence": scenario.Consequence,
@@ -110,7 +110,7 @@ func (r *deviationScenarioRepository) Transition(
 		updates["reviewed_by_name"] = reviewerName
 	}
 	result := r.db.WithContext(ctx).Model(&model.DeviationScenario{}).
-		Where("id = ? AND scenario_state = ?", id, fromState).
+		Where("id = ? AND scenario_state = ? AND version = ?", id, fromState, expectedVersion).
 		Updates(updates)
 	if result.Error != nil {
 		return false, fmt.Errorf("transition deviation scenario %d: %w", id, result.Error)

@@ -200,9 +200,7 @@ func (s *deviationScenarioService) Transition(
 		role != constants.RoleAdmin && role != constants.RoleSafetyReviewer {
 		return dto.DeviationScenarioResponse{}, util.NewError(http.StatusForbidden, util.CodeForbidden, "only a safety reviewer may perform this transition")
 	}
-	allowed := constants.CanTransitionScenario(from, to) ||
-		(from == constants.ScenarioDraft && to == constants.ScenarioVerified) ||
-		(from == constants.ScenarioRework && to == constants.ScenarioAccepted)
+	allowed := constants.CanTransitionScenario(from, to)
 	if !allowed {
 		return dto.DeviationScenarioResponse{}, util.NewError(
 			http.StatusConflict, util.CodeStateTransition,
@@ -210,7 +208,7 @@ func (s *deviationScenarioService) Transition(
 		)
 	}
 	reviewAction := to == constants.ScenarioVerified || to == constants.ScenarioAccepted
-	if reviewAction && to != constants.ScenarioAccepted && !scenario.ReviewerSeparated(actor.UserID) {
+	if reviewAction && !scenario.ReviewerSeparated(actor.UserID) {
 		return dto.DeviationScenarioResponse{}, util.NewError(
 			http.StatusConflict, util.CodeReviewerConflict,
 			"scenario reviewer must differ from scenario author",

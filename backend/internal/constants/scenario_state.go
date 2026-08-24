@@ -11,11 +11,11 @@ const (
 )
 
 var scenarioTransitions = map[ScenarioState]map[ScenarioState]struct{}{
-	ScenarioDraft:    {ScenarioAnalyzed: {}, ScenarioVerified: {}},
+	ScenarioDraft:    {ScenarioAnalyzed: {}},
 	ScenarioAnalyzed: {ScenarioVerified: {}, ScenarioRework: {}},
 	ScenarioVerified: {ScenarioAccepted: {}, ScenarioRework: {}},
 	ScenarioAccepted: {},
-	ScenarioRework:   {ScenarioAnalyzed: {}, ScenarioAccepted: {}},
+	ScenarioRework:   {ScenarioAnalyzed: {}},
 }
 
 func (s ScenarioState) Valid() bool {
