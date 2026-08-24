@@ -30,7 +30,7 @@ func (r *processNodeRepository) GetByID(ctx context.Context, id uint) (model.Pro
 	var node model.ProcessNode
 	err := r.db.WithContext(ctx).First(&node, id).Error
 	if err != nil {
-		return model.ProcessNode{}, fmt.Errorf("find process node %d: %v", id, err)
+		return model.ProcessNode{}, fmt.Errorf("find process node %d: %w", id, err)
 	}
 	return node, nil
 }
@@ -38,7 +38,7 @@ func (r *processNodeRepository) GetByCode(ctx context.Context, code string) (mod
 	var node model.ProcessNode
 	err := r.db.WithContext(ctx).Where("node_code = ?", code).First(&node).Error
 	if err != nil {
-		return model.ProcessNode{}, fmt.Errorf("find process node by code: %v", err)
+		return model.ProcessNode{}, fmt.Errorf("find process node by code: %w", err)
 	}
 	return node, nil
 }

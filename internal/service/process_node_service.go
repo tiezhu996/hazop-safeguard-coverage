@@ -59,6 +59,9 @@ func (s *processNodeService) Create(
 func (s *processNodeService) Get(ctx context.Context, id uint) (dto.ProcessNodeResponse, error) {
 	node, err := s.nodes.GetByID(ctx, id)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return dto.ProcessNodeResponse{}, util.NotFound("process node")
+		}
 		return dto.ProcessNodeResponse{}, util.WrapError(http.StatusInternalServerError, util.CodeInternal, "unable to load process node", err)
 	}
 	summary, err := s.nodes.Summary(ctx, id)
@@ -94,6 +97,9 @@ func (s *processNodeService) Update(
 	request.Normalize()
 	node, err := s.nodes.GetByID(ctx, id)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return dto.ProcessNodeResponse{}, util.NotFound("process node")
+		}
 		return dto.ProcessNodeResponse{}, util.WrapError(http.StatusInternalServerError, util.CodeInternal, "unable to load process node", err)
 	}
 	before := node
@@ -134,6 +140,9 @@ func (s *processNodeService) Update(
 func (s *processNodeService) Deactivate(ctx context.Context, id uint, actor util.Actor) (dto.ProcessNodeResponse, error) {
 	node, err := s.nodes.GetByID(ctx, id)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return dto.ProcessNodeResponse{}, util.NotFound("process node")
+		}
 		return dto.ProcessNodeResponse{}, util.WrapError(http.StatusInternalServerError, util.CodeInternal, "unable to load process node", err)
 	}
 	if node.Status == "inactive" {
