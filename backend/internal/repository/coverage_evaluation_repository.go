@@ -45,27 +45,27 @@ func NewCoverageEvaluationRepository(db *gorm.DB) CoverageEvaluationRepository {
 func NewAuditRepository(db *gorm.DB) AuditRepository { return &auditRepository{db: db} }
 func NewUserRepository(db *gorm.DB) UserRepository   { return &userRepository{db: db} }
 func (r *coverageEvaluationRepository) Create(ctx context.Context, evaluation *model.CoverageEvaluation) error {
-	if err := r.db.Create(evaluation).Error; err != nil {
+	if err := r.db.WithContext(ctx).Create(evaluation).Error; err != nil {
 		return fmt.Errorf("create coverage evaluation: %w", err)
 	}
 	return nil
 }
 func (r *coverageEvaluationRepository) GetByID(ctx context.Context, id uint) (model.CoverageEvaluation, error) {
 	var evaluation model.CoverageEvaluation
-	if err := r.db.Preload("Scenario").First(&evaluation, id).Error; err != nil {
+	if err := r.db.WithContext(ctx).Preload("Scenario").First(&evaluation, id).Error; err != nil {
 		return model.CoverageEvaluation{}, fmt.Errorf("find coverage evaluation %d: %w", id, err)
 	}
 	return evaluation, nil
 }
 func (r *coverageEvaluationRepository) FindByIdempotencyKey(ctx context.Context, key string) (model.CoverageEvaluation, error) {
 	var evaluation model.CoverageEvaluation
-	if err := r.db.Where("idempotency_key = ?", key).First(&evaluation).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("idempotency_key = ?", key).First(&evaluation).Error; err != nil {
 		return model.CoverageEvaluation{}, fmt.Errorf("find evaluation by idempotency key: %w", err)
 	}
 	return evaluation, nil
 }
 func (r *coverageEvaluationRepository) List(ctx context.Context, query dto.CoverageEvaluationQuery) ([]model.CoverageEvaluation, int64, error) {
-	base := r.db.Model(&model.CoverageEvaluation{})
+	base := r.db.WithContext(ctx).Model(&model.CoverageEvaluation{})
 	if query.ScenarioID != 0 {
 		base = base.Where("scenario_id = ?", query.ScenarioID)
 	}
@@ -100,7 +100,7 @@ func (r *coverageEvaluationRepository) Transition(
 	}
 	values["evaluation_state"] = to
 	values["updated_at"] = time.Now().UTC()
-	result := r.db.Model(&model.CoverageEvaluation{}).
+	result := r.db.WithContext(ctx).Model(&model.CoverageEvaluation{}).
 		Where("id = ? AND evaluation_state IN ?", id, from).Updates(values)
 	if result.Error != nil {
 		return false, fmt.Errorf("transition coverage evaluation %d: %w", id, result.Error)
@@ -114,7 +114,7 @@ func (r *coverageEvaluationRepository) Complete(ctx context.Context, id uint, ex
 	}
 	values["evaluation_state"] = "completed"
 	values["updated_at"] = time.Now().UTC()
-	result := r.db.Model(&model.CoverageEvaluation{}).
+	result := r.db.WithContext(ctx).Model(&model.CoverageEvaluation{}).
 		Where("id = ? AND evaluation_state = ?", id, expectedState).Updates(values)
 	if result.Error != nil {
 		return false, fmt.Errorf("complete coverage evaluation %d: %w", id, result.Error)
@@ -139,13 +139,13 @@ func (r *auditRepository) Record(ctx context.Context, log model.AuditLog) error 
 	if log.AfterSnapshot == "" {
 		log.AfterSnapshot = "{}"
 	}
-	if err := r.db.Create(&log).Error; err != nil {
+	if err := r.db.WithContext(ctx).Create(&log).Error; err != nil {
 		return fmt.Errorf("record audit log: %w", err)
 	}
 	return nil
 }
 func (r *auditRepository) List(ctx context.Context, query AuditQuery) ([]model.AuditLog, int64, error) {
-	base := r.db.Model(&model.AuditLog{})
+	base := r.db.WithContext(ctx).Model(&model.AuditLog{})
 	if query.EntityType != "" {
 		base = base.Where("entity_type = ?", query.EntityType)
 	}

@@ -1,6 +1,5 @@
 package middleware
 import (
-	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"hazop-safeguard-coverage/backend/internal/model"
@@ -27,7 +26,7 @@ func Audit(audits repository.AuditRepository) gin.HandlerFunc {
 		after, _ := util.CanonicalJSON(map[string]any{
 			"method": c.Request.Method, "path": c.FullPath(), "status": c.Writer.Status(),
 		})
-		err := audits.Record(context.Background(), model.AuditLog{
+		err := audits.Record(c.Request.Context(), model.AuditLog{
 			RequestID: actor.RequestID, ActorID: actor.UserID, ActorName: actor.Username,
 			ActorRole: actor.Role, EntityType: entity, EntityID: entityID, Action: "http_write",
 			BeforeSnapshot: "{}", AfterSnapshot: after,
@@ -56,7 +55,7 @@ func AuditListHandler(audits repository.AuditRepository) gin.HandlerFunc {
 		if !parseAuditTime(c, "from", &query.From) || !parseAuditTime(c, "to", &query.To) {
 			return
 		}
-		items, total, err := audits.List(context.Background(), query)
+		items, total, err := audits.List(c.Request.Context(), query)
 		if err != nil {
 			util.Fail(c, util.WrapError(http.StatusInternalServerError, util.CodeInternal, "unable to list audit logs", err))
 			return
