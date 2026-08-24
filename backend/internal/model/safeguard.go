@@ -22,6 +22,9 @@ type Safeguard struct {
 func (Safeguard) TableName() string { return "safeguards" }
 
 func (s Safeguard) VerificationExpiresAt() *time.Time {
+	if s.LastVerifiedAt == nil {
+		return nil
+	}
 	expires := s.LastVerifiedAt.AddDate(0, 0, s.TestIntervalDays)
 	return &expires
 }

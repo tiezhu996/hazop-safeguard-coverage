@@ -68,6 +68,9 @@ func ineligibleReason(safeguard SnapshotSafeguard, referenceTime time.Time) stri
 	if safeguard.TestIntervalDays <= 0 {
 		return "test interval is invalid"
 	}
+	if safeguard.LastVerifiedAt == nil {
+		return "verification timestamp is missing"
+	}
 	expires := safeguard.LastVerifiedAt.AddDate(0, 0, safeguard.TestIntervalDays)
 	if referenceTime.After(expires) {
 		return fmt.Sprintf("verification expired at %s", expires.UTC().Format(time.RFC3339))

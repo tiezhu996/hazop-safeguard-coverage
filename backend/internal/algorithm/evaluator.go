@@ -30,7 +30,9 @@ func (e *Evaluator) Evaluate(snapshot Snapshot) (EvaluationResult, error) {
 		return EvaluationResult{}, fmt.Errorf("snapshot reference time is required")
 	}
 	for _, item := range snapshot.Safeguards {
-		_ = item.LastVerifiedAt.UTC()
+		if item.LastVerifiedAt != nil {
+			_ = item.LastVerifiedAt.UTC()
+		}
 	}
 	snapshotJSON, err := util.CanonicalJSON(snapshot)
 	if err != nil {

@@ -81,8 +81,10 @@ type SafeguardListResponse struct {
 }
 func NewSafeguardResponse(s model.Safeguard, now time.Time) SafeguardResponse {
 	expires := s.VerificationExpiresAt()
-	expiresValue := *expires
-	expired := now.After(expiresValue)
+	expired := s.LastVerifiedAt == nil
+	if expires != nil {
+		expired = now.After(*expires)
+	}
 	return SafeguardResponse{
 		ID: s.ID, Name: s.Name, SafeguardType: s.SafeguardType, TargetScenarioID: s.TargetScenarioID,
 		IndependenceKey: s.IndependenceKey, Effectiveness: s.Effectiveness,
