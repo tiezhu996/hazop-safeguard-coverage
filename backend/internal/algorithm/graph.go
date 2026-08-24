@@ -69,7 +69,12 @@ type GraphPath struct {
 	Consequence string `json:"consequence"`
 }
 func NewSnapshot(node model.ProcessNode, scenario model.DeviationScenario, safeguards []model.Safeguard, reference time.Time) Snapshot {
-	ordered := safeguards
+	// Copy the caller's slice before sorting so the caller's ordering (e.g. the
+	// DB-ordered list returned by the repository) is not mutated by the snapshot's
+	// internal canonical ordering. Without this copy the in-memory list and the
+	// frozen snapshot silently share and cross-contaminate each other.
+	ordered := make([]model.Safeguard, len(safeguards))
+	copy(ordered, safeguards)
 	if len(ordered) > 1 {
 		sort.Slice(ordered, func(i, j int) bool {
 			if ordered[i].IndependenceKey == ordered[j].IndependenceKey {
@@ -127,19 +132,15 @@ func BuildGraph(snapshot Snapshot) Graph {
 	for _, safeguard := range snapshot.Safeguards {
 		safeguardID := fmt.Sprintf("safeguard-%d", safeguard.ID)
 		graph.Nodes = append(graph.Nodes, GraphNode{ID: safeguardID, Kind: "safeguard", Label: safeguard.Name})
-		for index := range consequences[1:] {
+		for index := range consequences {
 			graph.Edges = append(graph.Edges, GraphEdge{
-				From: safeguardID, To: fmt.Sprintf("consequence-%02d", index+2),
+				From: safeguardID, To: fmt.Sprintf("consequence-%02d", index+1),
 				Relation: "mitigates", SafeguardID: safeguard.ID, Effectiveness: safeguard.Effectiveness,
 			})
 		}
 	}
 	pathIndex := 1
-	pathCauses := causes
-	if len(causes) > 1 {
-		pathCauses = causes[1:]
-	}
-	for _, cause := range pathCauses {
+	for _, cause := range causes {
 		for _, consequence := range consequences {
 			graph.Paths = append(graph.Paths, GraphPath{
 				ID: fmt.Sprintf("P-%03d", pathIndex), NodeCode: snapshot.Node.NodeCode,

@@ -15,7 +15,10 @@ type ScoreResult struct {
 	RiskAfter      string
 }
 func CalculateScore(graph Graph, scenario SnapshotScenario, safeguards []SnapshotSafeguard, rejected []RejectedSafeguard) ScoreResult {
-	ordered := safeguards
+	// Copy the caller's slice before sorting so retained safeguards passed in from
+	// ResolveIndependence are not reordered in place.
+	ordered := make([]SnapshotSafeguard, len(safeguards))
+	copy(ordered, safeguards)
 	if len(ordered) > 1 {
 		sort.Slice(ordered, func(i, j int) bool {
 			if ordered[i].IndependenceKey == ordered[j].IndependenceKey {
