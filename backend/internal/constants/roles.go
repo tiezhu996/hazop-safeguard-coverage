@@ -31,7 +31,9 @@ var rolePermissions = map[Role]map[string]struct{}{
 	RoleSafetyReviewer: {
 		PermissionRead: {}, PermissionReview: {}, PermissionSafeguard: {}, PermissionEvaluation: {}, PermissionConfirm: {},
 	},
-	RoleAuditor: {},
+	RoleAuditor: {
+		PermissionRead: {},
+	},
 }
 
 func (r Role) Valid() bool {

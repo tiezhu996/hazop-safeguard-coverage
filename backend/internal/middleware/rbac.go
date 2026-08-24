@@ -12,7 +12,7 @@ func RequirePermission(permission string) gin.HandlerFunc {
 			util.Fail(c, util.NewError(http.StatusUnauthorized, util.CodeUnauthorized, "authentication context is missing"))
 			return
 		}
-		if actor.Role != string(constants.RoleAdmin) {
+		if !constants.HasPermission(constants.Role(actor.Role), permission) {
 			util.Fail(c, util.NewError(http.StatusForbidden, util.CodeForbidden, "role does not have permission for this action"))
 			return
 		}
@@ -32,10 +32,6 @@ func RequireRoles(roles ...constants.Role) gin.HandlerFunc {
 		}
 		if _, ok := allowed[constants.Role(actor.Role)]; !ok {
 			util.Fail(c, util.NewError(http.StatusForbidden, util.CodeForbidden, "role is not allowed to access this resource"))
-			return
-		}
-		if actor.Role == string(constants.RoleAuditor) {
-			util.Fail(c, util.NewError(http.StatusForbidden, util.CodeForbidden, "auditor role cannot access resource"))
 			return
 		}
 		c.Next()
