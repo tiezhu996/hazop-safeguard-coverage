@@ -30,20 +30,11 @@ type UpdateProcessNodeRequest struct {
 	Status            *string  `json:"status" binding:"omitempty,oneof=active inactive"`
 }
 func (r *UpdateProcessNodeRequest) Normalize() {
-	value := strings.TrimSpace(*r.Name)
-	r.Name = &value
-	value = strings.TrimSpace(*r.UnitName)
-	r.UnitName = &value
-	value = strings.TrimSpace(*r.Medium)
-	r.Medium = &value
-	value = strings.TrimSpace(*r.OwnerTeam)
-	r.OwnerTeam = &value
-	normalizeStatus(r)
-}
-
-func normalizeStatus(r *UpdateProcessNodeRequest) {
-	status := strings.TrimSpace(*r.Status)
-	r.Status = &status
+	r.Name = trimPointer(r.Name)
+	r.UnitName = trimPointer(r.UnitName)
+	r.Medium = trimPointer(r.Medium)
+	r.OwnerTeam = trimPointer(r.OwnerTeam)
+	r.Status = trimPointer(r.Status)
 }
 type ProcessNodeQuery struct {
 	Search    string

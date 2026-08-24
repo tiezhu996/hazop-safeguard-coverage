@@ -15,7 +15,7 @@ type ProcessNode struct {
 	Scenarios         []DeviationScenario `gorm:"foreignKey:ProcessNodeID" json:"-"`
 }
 func (ProcessNode) TableName() string { return "process_nodes" }
-func (n ProcessNode) Active() bool { return n.Status != "inactive" }
+func (n ProcessNode) Active() bool { return n.Status == "active" }
 type ProcessNodeSummary struct {
 	ScenarioCount      int64   `json:"scenario_count"`
 	ActiveSafeguards   int64   `json:"active_safeguards"`

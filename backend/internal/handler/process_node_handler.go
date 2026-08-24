@@ -31,7 +31,9 @@ func (h *ProcessNodeHandler) Get(c *gin.Context) {
 }
 func (h *ProcessNodeHandler) Create(c *gin.Context) {
 	var request dto.CreateProcessNodeRequest
-	_ = c.ShouldBindJSON(&request)
+	if !bindJSON(c, &request) {
+		return
+	}
 	result, err := h.service.Create(c.Request.Context(), request, mustActor(c))
 	respond(c, http.StatusCreated, result, err)
 }
@@ -42,7 +44,9 @@ func (h *ProcessNodeHandler) Update(c *gin.Context) {
 		return
 	}
 	var request dto.UpdateProcessNodeRequest
-	_ = c.ShouldBindJSON(&request)
+	if !bindJSON(c, &request) {
+		return
+	}
 	result, err := h.service.Update(c.Request.Context(), id, request, mustActor(c))
 	respond(c, http.StatusOK, result, err)
 }
